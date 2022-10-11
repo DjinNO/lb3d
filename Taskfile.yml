@@ -37,10 +37,10 @@ tasks:
           echo "Image file already exist, skip downloading"
         fi
 
-  flash:
+  burn:
     cmds:
       - task: download
-      - echo "Flashing ..."
+      - echo "Burning ..."
       - sudo dd if={{ .IMAGE_PATH }} of=$SD_CARD_PATH bs=1024 status=progress
       - echo "Mounting $SD_CARD_PATH to /tmp/root_mnt ..." && mkdir -p /tmp/root_mnt
       - sudo mount /dev/mmcblk0p1 /tmp/root_mnt
@@ -147,3 +147,6 @@ tasks:
       - echo "Pulling OctoPrint ..."
       - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml pull"
 
+  wifi:client:
+    cmds:
+      - echo "TODO" # abbiliti to change client wifi cred

@@ -1,8 +1,13 @@
 # lb3d
 
+Portable 3D printer with OctoPrint and WiFi access point 
+
 Description
 ---
-Portable 3D printer with OctoPrint and WiFi access point 
+With this repo you can easy burn BPI-M2 ZERO Armbian image to sd card and setup OctoPrint and WiFi AP-STA Access Point
+
+AP-STA - With this feature you will have WiFi access point on BPI for admin control and BPI will be connected to your home AP as client
+
 
 | Software | Hardware |
 |----------|----------|
@@ -24,15 +29,15 @@ Preparation
 - Install requirements
 - Insert SD card into PC
 - Find SD card path with lsblk
-- Prepare flashing part of .env file (look at .env.example)
+- Prepare Burning part of .env file (look at .env.example)
 ```
-- task flash 
+- task burn 
 ```
 Provisioning
 ---
 - Insert SD card into bpi-m2 zero
 - Power it on, wait and find bpi ip address
-- Prepare provisioning part of .env file (look at .env.example)
+- Prepare Provisioning part of .env file (look at .env.example)
 ```
 - task ansible
 ```

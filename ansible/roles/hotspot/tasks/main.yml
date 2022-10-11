@@ -1,10 +1,10 @@
-- name: Add ap0 via udev
+- name: Add ap0 AP-STA via udev
   copy:
     content: SUBSYSTEM=="net", KERNEL=="wlan*", ACTION=="add", RUN+="/sbin/iw dev wlan0 interface add ap0 type __ap"
     dest: /etc/udev/rules.d/70-ap-interface.rules
   register: ap0udev
 
-- name: Exclude ap0 from NetworkManager via udev
+- name: Exclude ap0 AP-STA from NetworkManager via udev
   copy:
     content: ACTION=="add", SUBSYSTEM=="net", KERNEL=="ap0", ENV{NM_UNMANAGED}="1"
     dest: /etc/udev/rules.d/00-exclude-ap0.rules
