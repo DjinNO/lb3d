@@ -22,14 +22,14 @@ Requirements
 - wget
 - unxz
 
-NOTE: If you want to build Dockerfile - just change value of CI_DOCKER_IMAGE to dansible
+**NOTE:** If you want to build with Dockerfile - change value of **CI_DOCKER_IMAGE** to **dansible** in Taskfile.yml
 
 Preparation
 ---
 - Install requirements
 - Insert SD card into PC
 - Find SD card path with lsblk
-- Prepare Burning part of .env file (look at .env.example)
+- Prepare Burning part of **.env** file (look at .env.example)
 ```
 - task burn 
 ```
@@ -37,7 +37,7 @@ Provisioning
 ---
 - Insert SD card into bpi-m2 zero
 - Power it on, wait and find bpi ip address
-- Prepare Provisioning part of .env file (look at .env.example)
+- Prepare Provisioning part of **.env** file (look at .env.example)
 ```
 - task ansible
 ```
