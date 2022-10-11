@@ -1,0 +1,22 @@
+- name: Add octoprint group
+  ansible.builtin.group:
+    name: octoprint
+    state: present
+
+- name: Add octoprint user
+  ansible.builtin.user:
+    name: octoprint
+    create_home: true
+    shell: /bin/bash
+    groups: octoprint,docker
+
+- name: Copy docker-compose.yml
+  ansible.builtin.copy:
+    src: files/docker-compose.yml
+    dest: /home/octoprint/docker-compose.yml
+    owner: octoprint
+    group: octoprint
+    mode: '0644'
+
+- name: Start octoprint
+  shell: docker compose -f /home/octoprint/docker-compose.yml up -d

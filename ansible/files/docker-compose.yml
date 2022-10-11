@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  octoprint:
+    image: octoprint/octoprint
+    restart: unless-stopped
+    ports:
+      - 80:80
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    volumes:
+     - ./data:/octoprint

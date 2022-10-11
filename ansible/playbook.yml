@@ -1,0 +1,12 @@
+- name: lb3d
+  hosts: all
+  become: true
+  roles:
+  - prepare
+  - packages
+  - hotspot
+  - docker
+  - octoprint
+  tasks:
+  - name: Reboot
+    ansible.builtin.reboot:

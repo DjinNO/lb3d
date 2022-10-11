@@ -1,0 +1,122 @@
+- name: Add ap0 via udev
+  copy:
+    content: SUBSYSTEM=="net", KERNEL=="wlan*", ACTION=="add", RUN+="/sbin/iw dev wlan0 interface add ap0 type __ap"
+    dest: /etc/udev/rules.d/70-ap-interface.rules
+  register: ap0udev
+
+- name: Exclude ap0 from NetworkManager via udev
+  copy:
+    content: ACTION=="add", SUBSYSTEM=="net", KERNEL=="ap0", ENV{NM_UNMANAGED}="1"
+    dest: /etc/udev/rules.d/00-exclude-ap0.rules
+
+- name: Systemd network script
+  copy:
+    content: |
+            [Match]
+            Name=ap0
+            [Network]
+            Address=192.168.3.1/28
+            DHCPServer=no
+    dest: /etc/systemd/network/20-ap0.network
+
+- name: Install hotspot packages
+  ansible.builtin.package:
+    state: present
+    name:
+    - isc-dhcp-server
+    - iptables-persistent
+    - hostapd
+  
+- name: Prepare hostapd.conf
+  copy:
+    content: |
+            interface=ap0
+            driver=nl80211
+            ssid={{ access_point_ssid }}
+            channel=7
+            hw_mode=g
+            macaddr_acl=0
+            auth_algs=3
+            ignore_broadcast_ssid=0
+            ieee80211n=1
+            wpa=2
+            wpa_passphrase={{ access_point_pass }}
+            wpa_key_mgmt=WPA-PSK
+            wpa_pairwise=TKIP
+            rsn_pairwise=CCMP
+    dest: /etc/hostapd/hostapd-hotspot.conf
+
+- name: Systemd hostapd script
+  copy:
+    content: |
+            [Unit]
+            Description=Advanced IEEE 802.11 AP and IEEE 802.1X/WPA/WPA2/EAP Authenticator
+            [Service]
+            Type=simple
+            ExecStart=/usr/sbin/hostapd /etc/hostapd/hostapd-%I.conf
+            [Install]
+            Alias=multi-user.target.wants/hostapd@%i.service
+    dest: /etc/systemd/system/hostapd@.service
+
+- name: Stopped and disabled hotspot services
+  service: 
+    name: "{{ item }}"
+    state: stopped
+    enabled: no 
+  with_items: 
+  - hostapd
+  - hostapd@hotspot
+  - isc-dhcp-server
+  - systemd-networkd
+
+- name: Prepare dhcpd.conf
+  copy:
+    content: |
+            default-lease-time 600;
+            max-lease-time 7200;
+            authoritative;
+            subnet 192.168.3.0 netmask 255.255.255.240 {
+              range 192.168.3.2 192.168.3.5;
+              option routers 192.168.3.1;
+              option domain-name-servers 1.1.1.1, 8.8.8.8;
+            }
+    dest: /etc/dhcp/dhcpd.conf
+
+- name: Prepare isc-dhcp-server
+  copy:
+    content: INTERFACESv4="ap0"
+    dest: /etc/default/isc-dhcp-server
+
+- name: Enable IPv4 forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: True
+
+- name: Create iptables NAT chain
+  iptables:
+    state: present
+    table: nat
+    chain: POSTROUTING
+    out_interface: wlan0
+    source: 192.168.3.0/28
+    destination: 0.0.0.0/0
+    jump: MASQUERADE
+    protocol: all
+    comment: Hotspot NAT
+
+- name: Save iptables
+  shell: "iptables-save > /etc/iptables/rules.v4"
+  become: true
+  changed_when: false
+
+- name: Started and enabled hotspot services
+  service: 
+    name: "{{ item }}"
+    state: started
+    enabled: yes 
+  with_items: 
+  - hostapd@hotspot
+  - isc-dhcp-server
+  - systemd-networkd

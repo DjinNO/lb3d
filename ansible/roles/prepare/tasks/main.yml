@@ -1,0 +1,64 @@
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ ansible_play_name }}"
+
+- name: Set hostname in /etc/hosts
+  ansible.builtin.replace:
+    path: /etc/hosts
+    regexp: "bananapim2zero"
+    replace: "{{ ansible_play_name }}"
+
+- name: Change welcome message header
+  copy:
+    content: |
+            #!/bin/bash
+            THIS_SCRIPT="header"
+            MOTD_DISABLE=""
+            [[ -f /etc/default/armbian-motd ]] && . /etc/default/armbian-motd
+            for f in $MOTD_DISABLE; do
+              [[ $f == $THIS_SCRIPT ]] && exit 0
+            done
+            . /etc/armbian-release
+            KERNELID=$(uname -r)
+            TERM=linux toilet -f standard {{ ansible_play_name }}
+            echo "{{ project_repo_url }}"
+            echo ""
+    dest: /etc/update-motd.d/10-armbian-header
+
+- name: Remove config spam message
+  ansible.builtin.file:
+    path: /etc/update-motd.d/41-armbian-config
+    state: absent
+
+- name: Remove first run wizard file
+  ansible.builtin.file:
+    path: /root/.not_logged_in_yet
+    state: absent
+
+- name: Creates .ssh directory
+  file:
+    path: "/root/.ssh"
+    state: directory
+    mode: '0700'
+    owner: root
+    group: root
+
+- name: Copy id_rsa.pub
+  ansible.builtin.copy:
+    src: "{{ admin_id_rsa_pub_path }}"
+    dest: "/root/.ssh/authorized_keys"
+    mode: '0600'
+    owner: root
+    group: root
+
+- name: Disable SSH password auth
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    line: "PasswordAuthentication no"
+    create: yes
+
+- name: Restart sshd
+  service: 
+    name: sshd
+    state: restarted
+    enabled: yes 

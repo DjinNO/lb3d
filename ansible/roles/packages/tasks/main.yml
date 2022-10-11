@@ -1,0 +1,26 @@
+- name: Remove armbian.list
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/armbian.list
+    state: absent
+
+- name: Prepare sources.list
+  copy:
+    content: |
+            deb http://ports.ubuntu.com/ focal main
+            deb http://ports.ubuntu.com/ focal universe
+    dest: /etc/apt/sources.list
+
+- name: Install packages
+  ansible.builtin.package:
+    state: present
+    name:
+    - vim
+    - curl
+    - wget
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    - mlocate
+    update_cache: true
+    

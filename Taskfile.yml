@@ -1,0 +1,149 @@
+version: "3"
+
+dotenv: [".env"]
+env:
+  ANSIBLE_HOST_KEY_CHECKING: False
+vars:
+  ANSIBLE_USER: root
+  ANSIBLE_PASSWORD: 1234
+  PROJECT_REPO_URL: https://gitlab.com/djinno/lb3d
+  IMAGE_PATH: /tmp/root_armbian.img
+  IMAGE_URL: https://imola.armbian.com/archive/bananapim2zero/archive/Armbian_21.08.1_Bananapim2zero_focal_current_5.10.60.img.xz
+  CI_DOCKER_IMAGE: registry.gitlab.com/djinno/lb3d:latest # dansible
+
+silent: true
+tasks:
+  docker:build:
+    cmds:
+      - >
+        if [ "{{ .CI_DOCKER_IMAGE }}" == "dansible" ]; then
+          echo "Building CI doker image ..." 
+          docker build -t dansible .
+        else
+          echo "Pulling CI doker image ..."
+          docker pull {{ .CI_DOCKER_IMAGE }}
+        fi
+      
+
+  download:
+    cmds:
+      - > 
+        if [ ! -f {{ .IMAGE_PATH }} ]; then 
+          echo "Image not found, downloading ..."
+          wget -q --show-progress {{ .IMAGE_URL }} -O {{ .IMAGE_PATH }}.xz
+          echo "Decompressing image ..."
+          unxz {{ .IMAGE_PATH }}.xz
+        else
+          echo "Image file already exist, skip downloading"
+        fi
+
+  flash:
+    cmds:
+      - task: download
+      - echo "Flashing ..."
+      - sudo dd if={{ .IMAGE_PATH }} of=$SD_CARD_PATH bs=1024 status=progress
+      - echo "Mounting $SD_CARD_PATH to /tmp/root_mnt ..." && mkdir -p /tmp/root_mnt
+      - sudo mount /dev/mmcblk0p1 /tmp/root_mnt
+      - echo "Preparing armbian_first_run.txt ..."
+      - sudo mv /tmp/root_mnt/boot/armbian_first_run.txt.template /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_change_defaults=0/FR_net_change_defaults=1/g" /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_ethernet_enabled=1/FR_net_ethernet_enabled=0/g" /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_enabled=0/FR_net_wifi_enabled=1/g" /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_ssid='MySSID'/FR_net_wifi_ssid=$WIFI_CLIENT_SSID/g" /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_key='MyWiFiKEY'/FR_net_wifi_key=$WIFI_CLIENT_PASS/g" /tmp/root_mnt/boot/armbian_first_run.txt
+      - sudo umount /tmp/root_mnt && sudo rm -rf /tmp/root_mnt
+      - echo "Unmounted /tmp/root_mnt"
+
+  ansible:
+    cmds:
+      - task: docker:build
+      - >
+        docker run -it -v /home/$(whoami)/.ssh/id_rsa:/root/.ssh/id_rsa \
+                       -v /home/$(whoami)/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub \
+                       -v $(pwd)/ansible:/workdir/ansible \
+                       -v $(pwd)/.env:/workdir/.env \
+                       -v $(pwd)/Taskfile.yml:/workdir/Taskfile.yml dansible task dansible
+
+  dansible:
+    dir: ./ansible
+    cmds:
+      - chmod 0700 /root/.ssh
+      - chmod 0600 /root/.ssh/id_rsa
+      - > 
+        ansible-playbook -i ${ANSIBLE_HOST}, -u {{ .ANSIBLE_USER }} playbook.yml
+        --extra-vars "admin_id_rsa_pub_path=/root/.ssh/id_rsa.pub
+                      ansible_password={{ .ANSIBLE_PASSWORD }} 
+                      access_point_ssid=$WIFI_ACCESS_POINT_SSID 
+                      access_point_pass=$WIFI_ACCESS_POINT_PASS
+                      project_repo_url={{ .PROJECT_REPO_URL }}"
+      - echo "Everything done!"
+      - echo "You can access OctoPrint now - http://${ANSIBLE_HOST}"
+
+  ssh:
+    cmds:
+      - ssh {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} -i /home/$(whoami)/.ssh/id_rsa
+
+  backup:all:
+    cmds: 
+      - task: backup:octoprint
+
+  backup:dd:
+    cmds: 
+      - echo "Creating disk image of $SD_CARD_PATH ..." && mkdir -p ./backup/dd
+      - dd if=$SD_CARD_PATH status=progress | gzip -c > ./backup/dd/image.img.gz
+      - echo "dd image created from $SD_CARD_PATH"
+
+  backup:octoprint:
+    cmds:
+      - task: octoprint:stop
+      - echo "Compressing OctoPrint data ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "mkdir -p /tmp/backup && cd /home/octoprint && tar -cvzf /tmp/backup/octoprint_data.tgz data"
+      - echo "Downloading OctoPrint data ..."
+      - scp  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/tmp/backup/octoprint_data.tgz ./backup/octoprint/data.tgz
+      - echo "Downloading OctoPrint docker-compose.yml ..."
+      - scp  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/home/octoprint/docker-compose.yml ./backup/octoprint/docker-compose.yml
+      - task: octoprint:start
+      - echo "OctoPrint backuped!"
+
+  restore:dd:
+    cmds: 
+      - echo "Restoring disk image to $SD_CARD_PATH ..."
+      - gunzip -c ./backup/dd/image.img.gz | dd of=$SD_CARD_PATH status=progress
+      - echo "dd image restored to $SD_CARD_PATH"
+
+  restore:octoprint:
+    cmds:
+      - task: octoprint:stop
+      - echo "Removing old OctoPrint data ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "rm -rf /home/octoprint/data/* && rm /home/octoprint/docker-compose.yml"
+      - echo "Uploading OctoPrint backup ..."
+      - scp  -i ~/.ssh/id_rsa ./backup/octoprint/data.tgz {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/tmp/backup/octoprint_data.tgz
+      - scp  -i ~/.ssh/id_rsa ./backup/octoprint/docker-compose.yml {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/home/octoprint/docker-compose.yml
+      - echo "Decompressing OctoPrint backup ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "tar -xsf /tmp/backup/octoprint_data.tgz -C /home/octoprint"
+      - task: octoprint:start
+      - rm /tmp/backup/octoprint_data.tgz
+      - echo "OctoPrint restored!"
+
+  update:octoprint:
+    cmds:
+      - task: octoprint:stop
+      - task: octoprint:pull
+      - task: octoprint:start
+
+  octoprint:stop:
+    internal: true
+    cmds:
+      - echo "Stopping OctoPrint ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml down"
+  octoprint:start:
+    internal: true
+    cmds:
+      - echo "Starting OctoPrint ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml up -d"
+  octoprint:pull:
+    internal: true
+    cmds:
+      - echo "Pulling OctoPrint ..."
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml pull"
+
