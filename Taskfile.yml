@@ -9,7 +9,7 @@ vars:
   PROJECT_REPO_URL: https://gitlab.com/djinno/lb3d
   IMAGE_PATH: /tmp/root_armbian.img
   IMAGE_URL: https://imola.armbian.com/archive/bananapim2zero/archive/Armbian_21.08.1_Bananapim2zero_focal_current_5.10.60.img.xz
-  CI_DOCKER_IMAGE: registry.gitlab.com/djinno/lb3d:latest # dansible
+  CI_DOCKER_IMAGE: registry.gitlab.com/djinno/lb3d:0.0.1 # dansible
 
 silent: true
 tasks:
