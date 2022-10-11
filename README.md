@@ -14,6 +14,7 @@ AP-STA - With this feature you will have WiFi access point on BPI for admin cont
 | [Armbian 21.08.1 focal_current 5.10.60](https://imola.armbian.com/archive/bananapim2zero/archive/) | [e3d nano](https://www.easythreed.com/en/h-col-1203.html) |
 | [Docker](https://www.docker.com/) | [Banana Pi M2 Zero](https://wiki.banana-pi.org/Banana_Pi_BPI-M2_ZERO) |
 | [OctoPrint](https://octoprint.org) ||
+| [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/) ||
 
 Requirements
 ---

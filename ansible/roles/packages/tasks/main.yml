@@ -23,4 +23,8 @@
     - lsb-release
     - mlocate
     update_cache: true
+   
+- name: Install cloudflared
+  ansible.builtin.apt:
+    deb: https://github.com/cloudflare/cloudflared/releases/download/2022.9.1/cloudflared-linux-armhf.deb
     
