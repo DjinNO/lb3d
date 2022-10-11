@@ -10,9 +10,20 @@
     shell: /bin/bash
     groups: octoprint,docker
 
-- name: Copy docker-compose.yml
-  ansible.builtin.copy:
-    src: files/docker-compose.yml
+- name: Prepare docker-compose.yml
+  copy:
+    content: |
+            version: '3.8'
+            services:
+              octoprint:
+                image: octoprint/octoprint
+                restart: unless-stopped
+                ports:
+                  - 80:80
+                devices:
+                  - /dev/ttyUSB0:/dev/ttyUSB0
+                volumes:
+                - ./data:/octoprint
     dest: /home/octoprint/docker-compose.yml
     owner: octoprint
     group: octoprint
