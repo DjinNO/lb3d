@@ -1,4 +1,5 @@
 # lb3d
+![lb3d](/.img/octbpi.png)
 
 Portable 3D printer with OctoPrint and WiFi access point 
 
