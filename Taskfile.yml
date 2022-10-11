@@ -149,4 +149,4 @@ tasks:
 
   wifi:client:
     cmds:
-      - echo "TODO" # abbiliti to change client wifi cred
+      - echo "TODO" # ability to change client wifi cred
