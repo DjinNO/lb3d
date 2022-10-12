@@ -1,6 +1,7 @@
 # lb3d
-<p align="center"><img src=".img/octbpi.png"></p>
-<p align="center">Portable 3D printer with OctoPrint and WiFi access point</p>
+![lb3d](/.img/octbpi.png)
+
+Portable 3D printer with OctoPrint and WiFi access point 
 
 Description
 ---
