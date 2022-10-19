@@ -115,14 +115,13 @@ tasks:
     cmds:
       - task: octoprint:stop
       - echo "Removing old OctoPrint data ..."
-      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "rm -rf /home/octoprint/data/* && rm /home/octoprint/docker-compose.yml"
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "rm -rf /home/octoprint/data/* && rm /home/octoprint/docker-compose.yml || true && mkdir -p /tmp/backup"
       - echo "Uploading OctoPrint backup ..."
       - scp  -i ~/.ssh/id_rsa ./backup/octoprint/data.tgz {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/tmp/backup/octoprint_data.tgz
       - scp  -i ~/.ssh/id_rsa ./backup/octoprint/docker-compose.yml {{ .ANSIBLE_USER }}@${ANSIBLE_HOST}:/home/octoprint/docker-compose.yml
       - echo "Decompressing OctoPrint backup ..."
       - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "tar -xsf /tmp/backup/octoprint_data.tgz -C /home/octoprint"
       - task: octoprint:start
-      - rm /tmp/backup/octoprint_data.tgz
       - echo "OctoPrint restored!"
 
   update:octoprint:
@@ -135,7 +134,7 @@ tasks:
     internal: true
     cmds:
       - echo "Stopping OctoPrint ..."
-      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml down"
+      - ssh  -i ~/.ssh/id_rsa {{ .ANSIBLE_USER }}@${ANSIBLE_HOST} "docker compose -f /home/octoprint/docker-compose.yml down || true"
   octoprint:start:
     internal: true
     cmds:
