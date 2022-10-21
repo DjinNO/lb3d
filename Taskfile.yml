@@ -58,11 +58,12 @@ tasks:
     cmds:
       - task: docker:build
       - >
-        docker run -it -v /home/$(whoami)/.ssh/id_rsa:/root/.ssh/id_rsa \
-                       -v /home/$(whoami)/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub \
-                       -v $(pwd)/ansible:/workdir/ansible \
-                       -v $(pwd)/.env:/workdir/.env \
-                       -v $(pwd)/Taskfile.yml:/workdir/Taskfile.yml dansible task dansible
+        docker run -it --rm  \
+                    -v /home/$(whoami)/.ssh/id_rsa:/root/.ssh/id_rsa \
+                    -v /home/$(whoami)/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub \
+                    -v $(pwd)/ansible:/workdir/ansible \
+                    -v $(pwd)/.env:/workdir/.env \
+                    -v $(pwd)/Taskfile.yml:/workdir/Taskfile.yml dansible task dansible
 
   dansible:
     dir: ./ansible
