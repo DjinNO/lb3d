@@ -8,6 +8,7 @@ vars:
   ANSIBLE_PASSWORD: 1234
   PROJECT_REPO_URL: https://gitlab.com/djinno/lb3d
   IMAGE_PATH: /tmp/armbian.img
+  MOUNT_PATH: /tmp/mount_armbian
   IMAGE_URL: https://imola.armbian.com/archive/bananapim2zero/archive/Armbian_21.08.1_Bananapim2zero_focal_current_5.10.60.img.xz
   CI_DOCKER_IMAGE: registry.gitlab.com/djinno/lb3d:0.0.1 # dansible
 
@@ -42,17 +43,17 @@ tasks:
       - task: download
       - echo "Burning ..."
       - sudo dd if={{ .IMAGE_PATH }} of=$SD_CARD_PATH bs=1024 status=progress
-      - echo "Mounting $SD_CARD_PATH to /tmp/root_mnt ..." && mkdir -p /tmp/root_mnt
-      - sudo mount /dev/mmcblk0p1 /tmp/root_mnt
+      - echo "Mounting $SD_CARD_PATH to {{ .MOUNT_PATH}} ..." && mkdir -p {{ .MOUNT_PATH}}
+      - sudo mount /dev/mmcblk0p1 {{ .MOUNT_PATH}}
       - echo "Preparing armbian_first_run.txt ..."
-      - sudo mv /tmp/root_mnt/boot/armbian_first_run.txt.template /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo sed -i "s/FR_net_change_defaults=0/FR_net_change_defaults=1/g" /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo sed -i "s/FR_net_ethernet_enabled=1/FR_net_ethernet_enabled=0/g" /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo sed -i "s/FR_net_wifi_enabled=0/FR_net_wifi_enabled=1/g" /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo sed -i "s/FR_net_wifi_ssid='MySSID'/FR_net_wifi_ssid=$WIFI_CLIENT_SSID/g" /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo sed -i "s/FR_net_wifi_key='MyWiFiKEY'/FR_net_wifi_key=$WIFI_CLIENT_PASS/g" /tmp/root_mnt/boot/armbian_first_run.txt
-      - sudo umount /tmp/root_mnt && sudo rm -rf /tmp/root_mnt
-      - echo "Unmounted /tmp/root_mnt"
+      - sudo mv {{ .MOUNT_PATH}}/boot/armbian_first_run.txt.template {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_change_defaults=0/FR_net_change_defaults=1/g" {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_ethernet_enabled=1/FR_net_ethernet_enabled=0/g" {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_enabled=0/FR_net_wifi_enabled=1/g" {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_ssid='MySSID'/FR_net_wifi_ssid=$WIFI_CLIENT_SSID/g" {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo sed -i "s/FR_net_wifi_key='MyWiFiKEY'/FR_net_wifi_key=$WIFI_CLIENT_PASS/g" {{ .MOUNT_PATH}}/boot/armbian_first_run.txt
+      - sudo umount {{ .MOUNT_PATH}} && sudo rm -rf {{ .MOUNT_PATH}}
+      - echo "Unmounted {{ .MOUNT_PATH}}"
 
   ansible:
     cmds:
