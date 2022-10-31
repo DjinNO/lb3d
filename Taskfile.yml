@@ -64,7 +64,7 @@ tasks:
                     -v /home/$(whoami)/.ssh/id_rsa.pub:/root/.ssh/id_rsa.pub \
                     -v $(pwd)/ansible:/workdir/ansible \
                     -v $(pwd)/.env:/workdir/.env \
-                    -v $(pwd)/Taskfile.yml:/workdir/Taskfile.yml dansible task dansible
+                    -v $(pwd)/Taskfile.yml:/workdir/Taskfile.yml {{ .CI_DOCKER_IMAGE }} task dansible
 
   dansible:
     dir: ./ansible
