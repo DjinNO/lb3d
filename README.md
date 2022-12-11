@@ -56,5 +56,13 @@ task backup:octoprint  # Backup and download OctoPrint data to the ./backup/octo
 task restore:octoprint # Upload and restore OctoPrint data from the ./backup/octoprint directory
 ```
 
+Cura settings
+---
+```
+x: 90
+y: 110
+z: 110
+```
+
 Circuit:
 #TODO
