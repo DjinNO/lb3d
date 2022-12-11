@@ -18,10 +18,10 @@ tasks:
     cmds:
       - >
         if [ "{{ .CI_DOCKER_IMAGE }}" == "dansible" ]; then
-          echo "Building CI doker image ..." 
+          echo "Building CI docker image ..." 
           docker build -t dansible .
         else
-          echo "Pulling CI doker image ..."
+          echo "Pulling CI docker image ..."
           docker pull {{ .CI_DOCKER_IMAGE }}
         fi
       
