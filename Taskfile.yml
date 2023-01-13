@@ -42,7 +42,7 @@ tasks:
     cmds:
       - task: download
       - echo "Burning ..."
-      - sudo dd if={{ .IMAGE_PATH }} of=$SD_CARD_PATH bs=1024 status=progress
+      - sudo dd if={{ .IMAGE_PATH }} of=$SD_CARD_PATH bs=10MB status=progress
       - echo "Mounting $SD_CARD_PATH to {{ .MOUNT_PATH}} ..." && mkdir -p {{ .MOUNT_PATH}}
       - sudo mount /dev/mmcblk0p1 {{ .MOUNT_PATH}}
       - echo "Preparing armbian_first_run.txt ..."
